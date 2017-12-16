@@ -25,6 +25,7 @@ from PIL import ImageDraw
 
 
 
+
 # A method that generates any random square for a chess board
 
 piece_map = {}
@@ -251,40 +252,80 @@ class DrawChessPosition(object):
 
 # image = a.draw('8/7K/8/4k3/8/8/3R4/8')
 
-def generate_data(num_data_points, save_file_name):
-    counter = 1
-    label = {}
+def generate_chess_image_flattened_data(num_data_points, save_file_name):
     writer = csv.writer(open(save_file_name, 'wb'))
     for iter in range(num_data_points):
-        # if not os.path.exists(save_dir):
-        #     os.makedirs(save_dir)
+
+        if iter % 5000 == 0:
+            print "iteration {0}".format(iter)
+
+        # generate the FEN randomly
         tup = generate_position()
         ans = tup[0]
         lab = tup[1]
 
-        if iter % 5000 == 0:
-            print("Data", iter, ":", ans)
-
-        # label[counter] = lab
-
+        # draw the positions on the chessboard and save it in an image
         a = DrawChessPosition()
         image = a.draw(ans)
         image = image.resize((50,50), Image.ANTIALIAS)
         filename = "temp.png"
-        # counter = counter + 1
         image.save(filename)
 
+        # convert the saved image data to a flat array
         image = misc.imread(filename, flatten=True)
-
         image = image.flatten()
 
-        # append the label at the beginning of the flattened image array
+        # append the label (class label) at the beginning of the flattened image array
         image = np.insert(image, 0, lab)
-        # image
+
+        # write the flattened image data along with its label to the csv file.
         writer.writerow(image)
 
     print("Congrats Miner! You have generated the dataset")
 
+
+
+def generate_one_hot(pieces):
+    one_hot_dict = {
+        ' ': [0., 0., 0., 0.],
+        'K': [1., 0., 0., 0.],
+        'k': [0., 1., 0., 0.],
+        'R': [0., 0., 1., 0.],
+        'r': [0., 0., 0., 1.]
+    }
+
+    one_hot = []
+
+    for piece in pieces:
+        one_hot.append(one_hot_dict[piece])
+    return np.array(one_hot)
+
+
+# this function generates a fen randomly and then then for every position (rook, king etc), generates a one-hot vector.
+# finally all the one hot vectors are stored for a chessboard in a flat vector.
+def generate_chess_one_hot_representation(num_data_points, save_file_name):
+    writer = csv.writer(open(save_file_name, 'wb'))
+    for iter in range(num_data_points):
+
+        if iter % 5000 == 0:
+            print "iteration {0}".format(iter)
+
+        # generate the FEN randomly
+        tup = generate_position()
+        fen = tup[0]
+        lab = tup[1]
+
+        pieces = expand_fen(fen)
+
+        one_hot = generate_one_hot(pieces)
+
+        # append the label (class label) at the beginning of the flattened one_hot array
+        one_hot = np.insert(one_hot, 0, lab)
+
+        # write the flattened one_hot data along with its label to the csv file.
+        writer.writerow(one_hot)
+
+    print("Congrats Miner! You have generated the dataset")
 
 if sys.argv[1] is not None:
     num_train_data_points = int(sys.argv[1])
@@ -298,5 +339,9 @@ else:
 
 train_dir = 'train'
 test_dir = 'test'
-generate_data(num_train_data_points, 'chess_train_{0}.csv'.format(num_train_data_points))
-generate_data(num_test_data_points, 'chess_test_{0}.csv'.format(num_test_data_points))
+
+generate_chess_image_flattened_data(num_train_data_points, 'chess_train_{0}.csv'.format(num_train_data_points))
+generate_chess_image_flattened_data(num_train_data_points, 'chess_train_{0}.csv'.format(num_train_data_points))
+
+# generate_chess_one_hot_representation(num_train_data_points, 'chess_train_one_hot_{0}.csv'.format(num_train_data_points))
+# generate_chess_one_hot_representation(num_test_data_points, 'chess_test_one_hot_{0}.csv'.format(num_test_data_points))

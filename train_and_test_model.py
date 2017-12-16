@@ -1,8 +1,7 @@
-from scipy import misc
-import scipy
 import numpy as np
 import random
 import os
+import sys
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
@@ -99,31 +98,28 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
     # return(sess.run(W))
 
 
+if sys.argv[1] is not None:
+    train_file = sys.argv[1]
+else:
+    train_file = 'chess_train_50000.csv'
 
+if sys.argv[2] is not None:
+    test_file = sys.argv[2]
+else:
+    test_file = 'chess_test_3000.csv'
 
-
-train_file = 'chess_train_50000.csv'
 train_images, train_labels = read_data(train_file)
+test_images, test_labels = read_data(test_file)
 
 print len(train_images)
 print len(train_labels)
 print train_images[1].shape
 print train_labels[1]
 
-test_file = 'chess_test_3000.csv'
-test_images, test_labels = read_data(test_file)
-
 print len(test_images)
 print len(test_labels)
 print test_images[1].shape
 print test_labels[1]
-
-print "DONE!"
-
-# X,Y = generate_next_batch(train_images, train_labels, 10, len(train_images[1]))
-#
-# print X.shape
-# print Y.shape
 
 train_and_test(train_images, train_labels, test_images, test_labels, batch_size=1000, n_epochs=100)
 
