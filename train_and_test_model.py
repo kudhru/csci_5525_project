@@ -30,6 +30,18 @@ def generate_next_batch(image_pool, labels,batch_size, feat):
 
     return (batch_data, batch_labels)
 
+def _get_batch_data(X_train, Y_train, batch_size):
+    train_size = batch_size / float(len(X_train))
+    if train_size < 1.0:
+        X_batch, _1, Y_batch, _2 = train_test_split(
+            X_train,
+            Y_train,
+            train_size=batch_size / float(len(X_train))
+        )
+    else:
+        X_batch, Y_batch = X_train, Y_train
+    return X_batch, Y_batch
+
 
 def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learning_rate=0.5, n_epochs = 1000):
     batch_size = min(min(len(X_train), len(X_test)), batch_size)
@@ -55,15 +67,7 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
         for i in range(n_epochs):  # train the model n_epochs times
             total_loss = 0
             for j in range(n_batches):
-                train_size = batch_size / float(len(X_train))
-                if train_size < 1.0:
-                    X_batch, _1, Y_batch, _2 = train_test_split(
-                        X_train,
-                        Y_train,
-                        train_size=batch_size / float(len(X_train))
-                    )
-                else:
-                    X_batch, Y_batch = X_train, Y_train
+                X_batch, Y_batch = _get_batch_data(X_train, Y_train, batch_size)
                 Y_batch = np.array([[1.,0.] if Y_batch[i] == 1 else [0.,1.] for i in range(Y_batch.shape[0])])
                 curr_step, curr_entropy = sess.run([train_step, cross_entropy],
                                                             feed_dict={x: X_batch, y: Y_batch})
@@ -82,15 +86,7 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
         total_correct_preds = 0
 
         for i in range(n_batches):
-            train_size = batch_size / float(len(X_test))
-            if train_size < 1.0:
-                X_batch, _1, Y_batch, _2 = train_test_split(
-                    X_test,
-                    Y_test,
-                    train_size=train_size
-                )
-            else:
-                X_batch, Y_batch = X_test, Y_test
+            X_batch, Y_batch = _get_batch_data(X_test, Y_test, batch_size)
             Y_batch = np.array([[1., 0.] if Y_batch[i] == 1 else [0., 1.] for i in range(Y_batch.shape[0])])
             accuracy_batch = sess.run(accuracy, feed_dict={x: X_batch, y: Y_batch})
             total_correct_preds += accuracy_batch
@@ -98,6 +94,9 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
         print 'Accuracy {0}'.format(total_correct_preds / len(X_test))
 
     # return(sess.run(W))
+
+
+
 
 
 train_file = 'chess_train_50000.csv'
