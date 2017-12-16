@@ -9,10 +9,16 @@
 # COPYRIGHT: All Rights Reserved
 
 #####################################################################################################################################################################################################################################
+import csv
 import random
 import numpy as np
+import os
 
 import re
+
+import sys
+
+from scipy import misc
 from PIL import Image
 from PIL import ImageDraw
 
@@ -33,31 +39,25 @@ move[0] = 'b'
 move[1] = 'w'
 
 def generate_chess_square():
-
-    file = random.randint(0,7)
-    rank = random.randint(0,7)
-
+    file = random.randint(0, 7)
+    rank = random.randint(0, 7)
     return(file,rank)
 
 
 # A method to print a given board
 def print_chess_board(board):
     for i in range(8):
-
         for j in range(8):
             print(board[i][j]," ",)
-
         print("\n")
 
-    
+
 def generate_position():
     label = random.randint(0,1)
-
     if(label == 0):
         which_rook = -5
     else:
         which_rook = 5
-
 
     w_king = (0,0)
     b_king = (0,0)
@@ -69,16 +69,15 @@ def generate_position():
         b_king = generate_chess_square()
         rook = generate_chess_square()
 
-    #print("White King: ",w_king,"Black King: ",b_king,"Rook: ",rook)
+    # print("White King: ",w_king,"Black King: ",b_king,"Rook: ",rook)
 
     board = np.zeros(shape = (8,8))
         
     board[w_king[0],w_king[1]]= np.inf
     board[b_king[0],b_king[1]] = -np.inf 
     board[rook[0],rook[1]] = which_rook 
-    
 
-    #print_chess_board(board)
+    # print_chess_board(board)
     
     total = ""
     for i in range(8):
@@ -88,7 +87,6 @@ def generate_position():
         
         walker = 0
 
-        
         for j in range(8):
             if board[i,j] == 0:
                 walker = walker + 1
@@ -101,8 +99,6 @@ def generate_position():
                 
                 walker = 0
                 
-
-
         if walker != 0:
             this_row = this_row+str(walker)
 
@@ -111,15 +107,7 @@ def generate_position():
     total = total[1:]
 
     
-    return total,label
-                
-
-
-
-
-
-
-
+    return total, label
 
 
 
@@ -263,80 +251,52 @@ class DrawChessPosition(object):
 
 # image = a.draw('8/7K/8/4k3/8/8/3R4/8')
 
+def generate_data(num_data_points, save_file_name):
+    counter = 1
+    label = {}
+    writer = csv.writer(open(save_file_name, 'wb'))
+    for iter in range(num_data_points):
+        # if not os.path.exists(save_dir):
+        #     os.makedirs(save_dir)
+        tup = generate_position()
+        ans = tup[0]
+        lab = tup[1]
 
-counter = 1
-label = {}
+        if iter % 5000 == 0:
+            print("Data", iter, ":", ans)
 
-for _ in range(10000):
-    
-    
-    tup = generate_position()
+        # label[counter] = lab
 
-    ans = tup[0]
-    lab = tup[1]
+        a = DrawChessPosition()
+        image = a.draw(ans)
+        image = image.resize((50,50), Image.ANTIALIAS)
+        filename = "temp.png"
+        # counter = counter + 1
+        image.save(filename)
 
-    print("Train",counter,":",ans)
+        image = misc.imread(filename, flatten=True)
 
-    label[counter] = lab
+        image = image.flatten()
 
-    a = DrawChessPosition()
-    image = a.draw(ans)
-    filename = "train2/train"+str(counter)+".png"
-    counter = counter+1
-    image.save(filename)
-    
-print("Congrats Miner! You have generated the trainset")
+        # append the label at the beginning of the flattened image array
+        image = np.insert(image, 0, lab)
+        # image
+        writer.writerow(image)
 
-counter = 1
-with open("train/labels.csv","w") as f:
-
-    for _ in range(10000):
-        
-        f.write(str(counter))
-        f.write(",")
-        f.write(str(label[counter]))
-        f.write("\n")
-        counter = counter + 1
-
+    print("Congrats Miner! You have generated the dataset")
 
 
+if sys.argv[1] is not None:
+    num_train_data_points = int(sys.argv[1])
+else:
+    num_train_data_points = 10000
 
-                
-                
-    
+if sys.argv[2] is not None:
+    num_test_data_points = int(sys.argv[2])
+else:
+    num_test_data_points = 1000
 
-
-
-counter = 1
-label = {}
-
-for _ in range(20):
-    
-    
-    tup = generate_position()
-
-    ans = tup[0]
-    lab = tup[1]
-
-    print("Test",counter,":",ans)
-
-    label[counter] = lab
-
-    a = DrawChessPosition()
-    image = a.draw(ans)
-    filename = "test2/test"+str(counter)+".png"
-    counter = counter+1
-    image.save(filename)
-    
-print("Congrats Miner! You have generated the testset")
-
-counter = 1
-with open("test/labels.csv","w") as f:
-
-    for _ in range(2000):
-        
-        f.write(str(counter))
-        f.write(",")
-        f.write(str(label[counter]))
-        f.write("\n")
-        counter = counter + 1
+train_dir = 'train'
+test_dir = 'test'
+generate_data(num_train_data_points, 'chess_train_{0}.csv'.format(num_train_data_points))
+generate_data(num_test_data_points, 'chess_test_{0}.csv'.format(num_test_data_points))
