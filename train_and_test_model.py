@@ -64,16 +64,19 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
     with tf.Session() as sess:
         tf.global_variables_initializer().run()
         n_batches = int(len(X_train) / batch_size)
-        for i in range(n_epochs):  # train the model n_epochs times
+        for iter in range(n_epochs):  # train the model n_epochs times
+            # print iter
             total_loss = 0
             for j in range(n_batches):
+                # print j
                 X_batch, Y_batch = _get_batch_data(X_train, Y_train, batch_size)
                 Y_batch = np.array([[1.,0.] if Y_batch[i] == 1 else [0.,1.] for i in range(Y_batch.shape[0])])
                 curr_step, curr_entropy = sess.run([train_step, cross_entropy],
                                                             feed_dict={x: X_batch, y: Y_batch})
                 total_loss += curr_entropy
-            if i % 10 == 0:
-                print 'Average loss epoch {0}: {1}'.format(i, total_loss / n_batches)
+            # if i % 10 == 0:
+            print 'Average loss epoch {0}: {1}'.format(iter, total_loss / n_batches)
+            # print 'Average loss epoch {0}: {1}'.format(iter, total_loss / n_batches)
 
         print 'Optimization Finished!'  # should be around 0.35 after 25 epochs
 
@@ -85,7 +88,7 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
         n_batches = int(len(X_test) / batch_size)
         total_correct_preds = 0
 
-        for i in range(n_batches):
+        for iter in range(n_batches):
             X_batch, Y_batch = _get_batch_data(X_test, Y_test, batch_size)
             Y_batch = np.array([[1., 0.] if Y_batch[i] == 1 else [0., 1.] for i in range(Y_batch.shape[0])])
             accuracy_batch = sess.run(accuracy, feed_dict={x: X_batch, y: Y_batch})
@@ -122,7 +125,7 @@ print "DONE!"
 # print X.shape
 # print Y.shape
 
-train_and_test(train_images, train_labels, test_images, test_labels, batch_size=10000, n_epochs=1)
+train_and_test(train_images, train_labels, test_images, test_labels, batch_size=1000, n_epochs=100)
 
     
     
