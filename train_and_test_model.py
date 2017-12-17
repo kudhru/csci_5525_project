@@ -1,9 +1,9 @@
-import sys
+import sys, os
 
 import numpy as np
 import tensorflow as tf
 
-from utils import generate_one_hot_num_array, read_data
+from utils import generate_one_hot_num_array, read_data, variable_summaries
 
 
 def _get_batch_data(X_train, Y_train, batch_size, iteration):
@@ -22,9 +22,9 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
     x = tf.placeholder(tf.float32, [batch_size, D])
     y = tf.placeholder(tf.float32, [batch_size, num_class])
 
-
     W = tf.Variable(tf.zeros([D, num_class]))
     b = tf.Variable(tf.zeros([num_class]))
+
 
 
     pred_y = tf.matmul(x, W) + b
@@ -33,7 +33,17 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
     train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
     print 'Optimization starting!'
 
+    tf.summary.histogram('y', y)
+    variable_summaries(W)
+    variable_summaries(b)
+    tf.summary.histogram('pred_y', pred_y)
+    tf.summary.scalar('cross_entropy', cross_entropy)
+    merged = tf.summary.merge_all()
+
     with tf.Session() as sess:
+        train_writer = tf.summary.FileWriter(summaries_dir + '/train',
+                                             sess.graph)
+        test_writer = tf.summary.FileWriter(summaries_dir + '/test')
         tf.global_variables_initializer().run()
         n_batches = int(len(X_train) / batch_size)
         for iter in range(n_epochs):  # train the model n_epochs times
@@ -43,8 +53,9 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
                 # print j
                 X_batch, Y_batch = _get_batch_data(X_train, Y_train, batch_size, j)
                 Y_batch = generate_one_hot_num_array(Y_batch, num_class)
-                curr_step, curr_entropy = sess.run([train_step, cross_entropy],
+                curr_step, curr_entropy, summary = sess.run([train_step, cross_entropy, merged],
                                                             feed_dict={x: X_batch, y: Y_batch})
+                train_writer.add_summary(summary, iter * n_batches + j)
                 total_loss += curr_entropy
 
                 if j % 100 == 0:
@@ -65,10 +76,13 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
         for iter in range(n_batches):
             X_batch, Y_batch = _get_batch_data(X_test, Y_test, batch_size, iter)
             Y_batch = generate_one_hot_num_array(Y_batch, num_class)
-            accuracy_batch = sess.run(accuracy, feed_dict={x: X_batch, y: Y_batch})
+            accuracy_batch, summary = sess.run([accuracy, merged], feed_dict={x: X_batch, y: Y_batch})
+            test_writer.add_summary(summary, iter)
             total_correct_preds += accuracy_batch
 
         print 'Accuracy {0}'.format(total_correct_preds / len(X_test))
+        train_writer.close()
+        test_writer.close()
 
 train_file = sys.argv[1]
 test_file = sys.argv[2]
@@ -85,6 +99,8 @@ print len(test_images)
 print len(test_labels)
 print test_images[1].shape
 print test_labels[1]
+
+summaries_dir = os.path.join('{0}_summary_logs'.format(train_file.split('.')[0]))
 
 train_and_test(train_images, train_labels, test_images, test_labels, batch_size=1000, n_epochs=100, learning_rate=0.1)
 

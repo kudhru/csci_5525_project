@@ -24,7 +24,7 @@ from PIL import Image
 
 # A method that generates any random square for a chess board
 from draw_chessboard import DrawChessPosition, expand_fen
-from generate_one_hot import generate_one_hot_chess_pieces
+from utils import generate_one_hot_chess_pieces
 
 piece_map = {}
 
@@ -176,12 +176,12 @@ def generate_chess_one_hot_representation(num_data_points, save_file_name):
 
     print("Congrats Miner! You have generated the dataset")
 
-if sys.argv[1] is not None:
+if len(sys.argv) > 1:
     num_train_data_points = int(sys.argv[1])
 else:
     num_train_data_points = 10000
 
-if sys.argv[2] is not None:
+if len(sys.argv) > 2:
     num_test_data_points = int(sys.argv[2])
 else:
     num_test_data_points = 1000
@@ -189,8 +189,8 @@ else:
 train_dir = 'train'
 test_dir = 'test'
 
-generate_chess_image_flattened_data(num_train_data_points, 'chess_train_{0}.csv'.format(num_train_data_points))
-generate_chess_image_flattened_data(num_train_data_points, 'chess_train_{0}.csv'.format(num_train_data_points))
+# generate_chess_image_flattened_data(num_train_data_points, 'chess_train_{0}.csv'.format(num_train_data_points))
+# generate_chess_image_flattened_data(num_train_data_points, 'chess_train_{0}.csv'.format(num_train_data_points))
 
-# generate_chess_one_hot_representation(num_train_data_points, 'chess_train_one_hot_{0}.csv'.format(num_train_data_points))
-# generate_chess_one_hot_representation(num_test_data_points, 'chess_test_one_hot_{0}.csv'.format(num_test_data_points))
+generate_chess_one_hot_representation(num_train_data_points, 'chess_train_one_hot_{0}.csv'.format(num_train_data_points))
+generate_chess_one_hot_representation(num_test_data_points, 'chess_test_one_hot_{0}.csv'.format(num_test_data_points))
