@@ -37,7 +37,7 @@ test_writer = csv.writer(open(test_file, 'wb'))
 
 with chess.syzygy.open_tablebases("/Users/AkhilaRasamrtaMurthih/work/wdl") as tablebases:
     for index_data in range(num_data_points):
-        if index_data % 2000 == 0:
+        if index_data % 20000 == 0:
             print index_data
         fen = make_fen(6)
         board = chess.Board(fen)

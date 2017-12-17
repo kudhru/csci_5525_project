@@ -26,3 +26,12 @@ def generate_one_hot_num_array(array, num_uniq):
     return one_hot
 
 
+def read_data(data_file):
+    data = np.loadtxt(data_file, delimiter=',')
+    np.random.shuffle(data)
+    dimension = data.shape[1] - 1
+
+    target = data[:, 0]
+    data_without_target = data[:, 1:dimension + 1]
+    data_without_target.astype(float)
+    return data_without_target, target
