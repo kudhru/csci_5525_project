@@ -5,6 +5,8 @@ import sys
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
+from generate_one_hot import generate_one_hot_num_array
+
 
 def read_data(data_file):
     data = np.loadtxt(data_file, delimiter=',')
@@ -37,6 +39,12 @@ def _get_batch_data(X_train, Y_train, batch_size):
             Y_train,
             train_size=batch_size / float(len(X_train))
         )
+        actual_size = len(X_batch)
+        diff = batch_size - actual_size
+        for _ in range(diff):
+            index = np.random.randint(len(X_train))
+            X_batch = np.append(X_batch, [X_train[index]], axis=0)
+            Y_batch = np.append(Y_batch, [Y_train[index]], axis=0)
     else:
         X_batch, Y_batch = X_train, Y_train
     return X_batch, Y_batch
@@ -45,13 +53,14 @@ def _get_batch_data(X_train, Y_train, batch_size):
 def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learning_rate=0.5, n_epochs = 1000):
     batch_size = min(min(len(X_train), len(X_test)), batch_size)
     D = len(X_train[0])
+    num_class = len(np.unique(np.append(Y_train, Y_test)))
 
     x = tf.placeholder(tf.float32, [batch_size, D])
-    y = tf.placeholder(tf.float32, [batch_size, 2])
+    y = tf.placeholder(tf.float32, [batch_size, num_class])
 
 
-    W = tf.Variable(tf.zeros([D, 2]))
-    b = tf.Variable(tf.zeros([2]))
+    W = tf.Variable(tf.zeros([D, num_class]))
+    b = tf.Variable(tf.zeros([num_class]))
 
 
     pred_y = tf.matmul(x, W) + b
@@ -69,13 +78,16 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
             for j in range(n_batches):
                 # print j
                 X_batch, Y_batch = _get_batch_data(X_train, Y_train, batch_size)
-                Y_batch = np.array([[1.,0.] if Y_batch[i] == 1 else [0.,1.] for i in range(Y_batch.shape[0])])
+                Y_batch = generate_one_hot_num_array(Y_batch, num_class)
+                # Y_batch = np.array([[1.,0.] if Y_batch[i] == 1 else [0.,1.] for i in range(Y_batch.shape[0])])
                 curr_step, curr_entropy = sess.run([train_step, cross_entropy],
                                                             feed_dict={x: X_batch, y: Y_batch})
                 total_loss += curr_entropy
-            # if i % 10 == 0:
+
+                if j % 100 == 0:
+                    print 'Average loss epoch {0} {1}: {2}'.format(iter, j, total_loss / (j+1))
+
             print 'Average loss epoch {0}: {1}'.format(iter, total_loss / n_batches)
-            # print 'Average loss epoch {0}: {1}'.format(iter, total_loss / n_batches)
 
         print 'Optimization Finished!'  # should be around 0.35 after 25 epochs
 
@@ -89,7 +101,8 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
 
         for iter in range(n_batches):
             X_batch, Y_batch = _get_batch_data(X_test, Y_test, batch_size)
-            Y_batch = np.array([[1., 0.] if Y_batch[i] == 1 else [0., 1.] for i in range(Y_batch.shape[0])])
+            Y_batch = generate_one_hot_num_array(Y_batch, num_class)
+            # Y_batch = np.array([[1., 0.] if Y_batch[i] == 1 else [0., 1.] for i in range(Y_batch.shape[0])])
             accuracy_batch = sess.run(accuracy, feed_dict={x: X_batch, y: Y_batch})
             total_correct_preds += accuracy_batch
 
@@ -98,15 +111,8 @@ def train_and_test( X_train, Y_train, X_test, Y_test, batch_size = 1000, learnin
     # return(sess.run(W))
 
 
-if sys.argv[1] is not None:
-    train_file = sys.argv[1]
-else:
-    train_file = 'chess_train_50000.csv'
-
-if sys.argv[2] is not None:
-    test_file = sys.argv[2]
-else:
-    test_file = 'chess_test_3000.csv'
+train_file = sys.argv[1]
+test_file = sys.argv[2]
 
 train_images, train_labels = read_data(train_file)
 test_images, test_labels = read_data(test_file)
@@ -121,7 +127,7 @@ print len(test_labels)
 print test_images[1].shape
 print test_labels[1]
 
-train_and_test(train_images, train_labels, test_images, test_labels, batch_size=1000, n_epochs=100)
+train_and_test(train_images, train_labels, test_images, test_labels, batch_size=1000, n_epochs=5, learning_rate=0.1)
 
     
     
