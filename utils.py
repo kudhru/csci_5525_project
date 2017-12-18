@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
+
 def generate_one_hot_chess_pieces(pieces):
     pool = 'KkRrBbQqNnPp'
     one_hot_dict = {}
@@ -36,6 +37,7 @@ def read_data(data_file):
     data_without_target.astype(float)
     return data_without_target, target
 
+
 def variable_summaries(var):
     with tf.name_scope('summaries'):
       mean = tf.reduce_mean(var)
@@ -46,3 +48,12 @@ def variable_summaries(var):
       tf.summary.scalar('max', tf.reduce_max(var))
       tf.summary.scalar('min', tf.reduce_min(var))
       tf.summary.histogram('histogram', var)
+
+
+def weight_variable(shape):
+  initial = tf.truncated_normal(shape, stddev=0.1)
+  return tf.Variable(initial)
+
+def bias_variable(shape):
+  initial = tf.constant(0.1, shape=shape)
+  return tf.Variable(initial)
